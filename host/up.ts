@@ -4,7 +4,7 @@
 import { existsSync, mkdirSync, unlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { loadChannel } from "./channels.ts";
-import { parseListen, readConfig, type ChannelConfig } from "./config.ts";
+import { managerEnabled, parseListen, readConfig, type ChannelConfig } from "./config.ts";
 import { HOME } from "./home.ts";
 import { runningUp } from "./service.ts";
 import { commitOf } from "./version.ts";
@@ -47,13 +47,19 @@ async function keepRunning(say: (line: string) => void, run: () => Promise<unkno
   }
 }
 
-function keepChannelRunning(id: string, { use, key, ...options }: ChannelConfig, url: string, signal: AbortSignal) {
+function keepChannelRunning(
+  id: string,
+  { use, key, ...options }: ChannelConfig,
+  url: string,
+  signal: AbortSignal,
+  enabled: boolean,
+) {
   const say = log(id);
   return keepRunning(
     say,
     async () => {
       const start = await loadChannel(use ?? id);
-      await start({ hub: hubClient(url, key), options, log: say, signal });
+      await start({ hub: hubClient(url, key), options: { ...options, managerEnabled: enabled }, log: say, signal });
     },
     signal,
   );
@@ -96,11 +102,18 @@ export async function up() {
   if (config.worker) {
     const { key, name, capacity, unreachable } = config.worker;
     const say = log("worker");
-    const worker = createWorker({ hub: hubClient(config.url, key), name, capacity, unreachable, log: say });
+    const worker = createWorker({
+      hub: hubClient(config.url, key),
+      name,
+      capacity,
+      unreachable,
+      log: say,
+      memory: managerEnabled(config),
+    });
     jobs.push(keepRunning(say, () => worker.run(stop.signal), stop.signal));
   }
   for (const [id, channel] of Object.entries(config.channels ?? {})) {
-    jobs.push(keepChannelRunning(id, channel, config.url, stop.signal));
+    jobs.push(keepChannelRunning(id, channel, config.url, stop.signal, managerEnabled(config)));
   }
   const finish = () => {
     stop.abort();

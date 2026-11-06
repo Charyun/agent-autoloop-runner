@@ -266,7 +266,7 @@ test("a job's context file carries this folder's memories, and the prompt keeps 
     const script = `PROMPT_ARG="$1"; cat "$AGENT_AUTOLOOP_CONTEXT" > mem.txt; echo "$PROMPT_ARG" > mem-prompt.txt; echo 改好了`;
     const given = job({ command: ["/bin/sh", "-c", script, "sh", "{prompt}"] });
     hub.jobs.push(given);
-    const w = worker(hub);
+    const w = worker(hub, { memory: true });
     await until(w, () => hub.results.length === 1);
     const file = JSON.parse(readFileSync(join(folder, "mem.txt"), "utf8"));
     assert.deepEqual(

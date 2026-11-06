@@ -199,3 +199,7 @@ MCP 服务不区分调用方，都按本人记录（`answer` 记成本人，`emi
 ## 版本与卸载
 
 `agent-autoloop --version` 显示版本和提交。`agent-autoloop uninstall` 确认后删除自身程序、链接和服务，规则、密钥和记录保留；`--yes` 只跳过确认。
+
+## 可选管理者文本入口
+
+配置与权限说明见 [examples/manager/README.md](../../examples/manager/README.md)。在飞书通道的 `config.json` 配置中增加可选的 `manager` 命令数组，订阅文本事件，并在本机配置顶层写 `"manager": { "enabled": true }` 后重启服务。开关默认关闭；关闭时不启动文本监听、不调用模型、不为新任务注入记忆，已有卡片正常工作。修改开关需重启中台/worker 与独立记忆进程。它只接受配置用户的私聊，管理者独立回复，中台卡片继续走现有流程。管理者配置在仓库外，通过 `llm.baseUrl`、`llm.model`、`llm.apiKeyEnv` 直连独立模型 API；owner 密钥不写进模型请求。会话按用户与聊天分别保存最近 8 轮，模型仅通过允许的工具查询中台。记忆订阅用独立进程启动，不再开飞书监听。此批支持进度、详情与精确编号停止，尚不支持派新任务或代答卡片。

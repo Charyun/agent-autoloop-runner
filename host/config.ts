@@ -12,7 +12,10 @@ export type Config = {
   channels?: Record<string, ChannelConfig>;
   source?: { name: string; key: string };
   owner?: string;
+  manager?: { enabled?: boolean };
 };
+
+export const managerEnabled = (config: Pick<Config, "manager">) => config.manager?.enabled === true;
 
 export const CONFIG_FILE = path.join(HOME, "config.json");
 

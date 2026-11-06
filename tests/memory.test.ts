@@ -51,3 +51,11 @@ test("a memory file that's missing or broken hands over nothing", () => {
   writeFileSync(join(home, "memory.json"), '{"half-written"');
   assert.deepEqual(recall(cwd), []);
 });
+
+test("a malformed timestamp cannot prevent a job from starting", () => {
+  write([memory("good"), memory("bad", { at: 42 })]);
+  assert.deepEqual(
+    recall(cwd).map((entry) => entry.id),
+    ["good"],
+  );
+});

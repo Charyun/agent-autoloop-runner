@@ -75,6 +75,7 @@ export type WorkerOptions = {
   hub: WorkerHub;
   name: string;
   capacity?: number;
+  memory?: boolean;
   log?: (line: string) => void;
   /** Run when the hub can't be reached for ten minutes, with {text} in it: nothing else can tell the owner then. */
   unreachable?: string[];
@@ -176,6 +177,7 @@ export function createWorker({
   hub,
   name,
   capacity = 2,
+  memory: memoryEnabled = false,
   log = () => {},
   unreachable,
   wait = WAIT,
@@ -287,10 +289,14 @@ export function createWorker({
     save(entry);
     try {
       // What earlier runs in this folder left behind rides along as material, in the file and nowhere else.
-      const memory = recall(job.rule.cwd);
-      writeFileSync(path.join(dir, "context.json"), JSON.stringify({ ...job.context, memory }, null, 2), {
-        mode: 0o600,
-      });
+      const memory = memoryEnabled ? recall(job.rule.cwd) : [];
+      writeFileSync(
+        path.join(dir, "context.json"),
+        JSON.stringify({ ...job.context, ...(memoryEnabled ? { memory } : {}) }, null, 2),
+        {
+          mode: 0o600,
+        },
+      );
       const adapter = await adapterFor(job.agent.use);
       entry.prompt = promptFor(job, path.join(dir, "context.json"), memory);
       save(entry);
@@ -392,12 +398,16 @@ export function createWorker({
     }
     if (entry.turn === 0) {
       // The worker stopped while starting it, before anything was launched.
-      const memory = recall(entry.job.rule.cwd);
-      if (!entry.prompt) entry.prompt = promptFor(entry.job, path.join(entry.dir, "context.json"), memory);
+      const memory = memoryEnabled ? recall(entry.job.rule.cwd) : [];
+      entry.prompt = promptFor(entry.job, path.join(entry.dir, "context.json"), memory);
       try {
-        writeFileSync(path.join(entry.dir, "context.json"), JSON.stringify({ ...entry.job.context, memory }, null, 2), {
-          mode: 0o600,
-        });
+        writeFileSync(
+          path.join(entry.dir, "context.json"),
+          JSON.stringify({ ...entry.job.context, ...(memoryEnabled ? { memory } : {}) }, null, 2),
+          {
+            mode: 0o600,
+          },
+        );
         return launch(entry, adapter, entry.prompt);
       } catch (error) {
         return endWith(entry, { outcome: "failed", error: String((error as Error).message ?? error).slice(0, 500) });

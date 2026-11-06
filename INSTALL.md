@@ -98,3 +98,7 @@ agent-autoloop uninstall
 - [安全边界](SECURITY.md)：密钥、执行权限和交付审查。
 
 开发检查用 `npm run test:quick`（改了 `kernel/`、`protocol/`、`sim/` 时用 `npm test`）、`npm run typecheck`、`npm run format:check`，完整故障检查和性能实测用 `npm run test:nightly`。备份和恢复见[配置手册](skills/agent-autoloop/SKILL.md#日志与恢复)。`master.key` 坏了中台会拒绝启动：从备份恢复；没有备份就删掉它，重启会生成新的，已发出的卡片链接和正在跑的轮次会失效。
+
+## 可选管理者
+
+飞书文本问答与独立记忆进程见[配置说明](examples/manager/README.md)。按说明准备仓库外的私有管理者配置，再给现有飞书通道增加可选 `manager` 命令；顶层 `manager.enabled` 默认关闭，只有设为 `true` 并重启相关进程才启用。关闭时沿用原来的卡片流程，不加载模型或为新任务注入记忆；独立记忆进程也需重启。

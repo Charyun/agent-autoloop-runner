@@ -251,3 +251,5 @@ Apple M5 Pro、24 GB、Node 24.21.0。写入逐条提交，事务落盘后才应
 </details>
 
 [MIT License](LICENSE)
+
+管理层默认关闭，需在本机 `config.json` 写 `"manager": { "enabled": true }` 并重启相关进程才启用。飞书可选接入[管理者文本问答](examples/manager/README.md)：私聊查询进度、查看某轮经过或按明确编号停止任务。中台卡片仍直接发送，管理者使用独立文本消息；此功能目前通过本地假 CLI 验证。

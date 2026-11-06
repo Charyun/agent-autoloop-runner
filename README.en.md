@@ -253,3 +253,5 @@ Start reading at `bin/agent-autoloop.ts` → `cli/main.ts`, then follow the feat
 </details>
 
 [MIT License](LICENSE)
+
+The manager is disabled by default. Set `"manager": { "enabled": true }` in the local `config.json` and restart the relevant processes to enable it. An optional [manager client](examples/manager/README.md) adds private-message progress questions, run details and explicit run cancellation to the chat channel. Existing cards keep their own delivery and callback flow. The new integration has been tested with local fake CLIs, not a live account.

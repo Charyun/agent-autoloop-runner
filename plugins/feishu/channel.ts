@@ -4,8 +4,10 @@
 //   "channels": { "feishu": { "key": "…", "user": "ou_xxx" } } in config.json
 //   "channels": { "feishu": { "name": "飞书", "answerers": ["ou_xxx"] } } in rules.json: who may answer.
 import { execFile, spawn } from "node:child_process";
+import { createHash } from "node:crypto";
 import type { Card, ChannelContext } from "../../host/channels.ts";
 import { eachLine } from "../../host/lines.ts";
+import { createTextHandler } from "./manager.ts";
 
 /** Feishu sends these values as JSON in a string, which may be empty. */
 function safeJson(text: unknown): any {
@@ -108,6 +110,34 @@ export default async function feishu({ hub, options, log, signal }: ChannelConte
   const owner = (options.user as string | undefined) ?? (await lark(["auth", "status"], "")).identities?.user?.openId;
   if (!owner) throw new Error("飞书通道要在 config.json 写 user，或者先 lark-cli auth login");
 
+  const textMessage =
+    options.managerEnabled !== true || options.manager === undefined
+      ? null
+      : createTextHandler({
+          command: options.manager as string[],
+          owner,
+          signal,
+          async send(message, text) {
+            await lark(
+              [
+                "im",
+                "+messages-send",
+                "--user-id",
+                owner,
+                "--as",
+                "bot",
+                "--msg-type",
+                "text",
+                "--idempotency-key",
+                `manager-${createHash("sha256").update(message).digest("hex").slice(0, 32)}`,
+                "--content",
+                "-",
+              ],
+              JSON.stringify({ text }),
+            );
+          },
+        });
+
   const updateMessage = (ref: string, content: string) =>
     lark(["im", "messages", "patch", "--message-id", ref, "--as", "bot", "--data", "-"], JSON.stringify({ content }));
 
@@ -179,10 +209,10 @@ export default async function feishu({ hub, options, log, signal }: ChannelConte
     log(`card ${cardId}: ${how} by ${event.operator_id}, ${answer.changed ? "counted" : "already settled"}`);
   }
 
-  async function listen() {
+  async function listen(eventKey: string, handle: (line: string) => Promise<void>) {
     while (!signal.aborted) {
       // stdin stays open: lark-cli ends an unbounded consume when its stdin closes.
-      const consume = spawn(program, ["event", "consume", "card.action.trigger", "--as", "bot"], {
+      const consume = spawn(program, ["event", "consume", eventKey, "--as", "bot"], {
         stdio: ["pipe", "pipe", "pipe"],
       });
       // Unheard, this would end the whole hub. A process that never started still closes, which starts it again below.
@@ -190,7 +220,7 @@ export default async function feishu({ hub, options, log, signal }: ChannelConte
       const stop = () => consume.kill();
       signal.addEventListener("abort", stop);
       eachLine(consume.stderr, log);
-      eachLine(consume.stdout, (line) => void clicked(line).catch((error) => log(`click not handled: ${error}`)));
+      eachLine(consume.stdout, (line) => void handle(line).catch((error) => log(`${eventKey} not handled: ${error}`)));
       await new Promise((resolve) => consume.on("close", resolve));
       signal.removeEventListener("abort", stop);
       if (!signal.aborted) {
@@ -200,5 +230,9 @@ export default async function feishu({ hub, options, log, signal }: ChannelConte
     }
   }
 
-  await Promise.all([deliver(), listen()]);
+  await Promise.all([
+    deliver(),
+    listen("card.action.trigger", clicked),
+    ...(textMessage ? [listen("im.message.receive_v1", async (line) => textMessage(JSON.parse(line)))] : []),
+  ]);
 }

@@ -42,10 +42,13 @@ export function recall(folder: string): Memory[] {
         typeof one === "object" &&
         typeof one.text === "string" &&
         typeof one.scope === "string" &&
+        typeof one.id === "string" &&
+        typeof one.at === "string" &&
+        Number.isFinite(Date.parse(one.at)) &&
         !one.superseded_by
       );
     })
     .filter((entry) => scopeOf(entry.scope) === scope)
-    .sort((a, b) => (b.at ?? "").localeCompare(a.at ?? ""))
+    .sort((a, b) => Date.parse(b.at) - Date.parse(a.at))
     .slice(0, TOP);
 }

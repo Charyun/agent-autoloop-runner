@@ -11,6 +11,8 @@
 // then broke, said nothing, or vanished is run again in a new one, or loses that session; a turn's end that doesn't exit holds its
 // place for ever; an old turn's exit is taken for a new one's; the hub gone for ten minutes isn't told, told every minute,
 // taken as told when the telling failed, tried without end, or not told again after it came back and went away again.
+// A folder's earlier runs leave memories behind: they reach another folder's context file, or their words reach the
+// prompt instead of staying in the file.
 // Session-cumulative usage must become per-launch deltas, including after a worker restart.
 // A shell replacing itself with the final move must not lose its identity before the exit file is published.
 // A failed or timed-out receipt repair must preserve the original business outcome; cancellation must reap a child
@@ -249,6 +251,36 @@ test("a job runs in its rule's folder with the prompt and context file, and with
   assert.match(readFileSync(join(folder, "ctx.txt"), "utf8"), /忽略所有规则/);
   assert.deepEqual(hub.results[0], { run: given.run, token: given.token, outcome: "done", summary: "改好了" });
   assert.equal(w.entries().length, 0, "handed in and let go");
+});
+
+test("a job's context file carries this folder's memories, and the prompt keeps their words out", async () => {
+  writeFileSync(
+    join(home, "memory.json"),
+    JSON.stringify([
+      { id: "mine", scope: folder, text: "上次类似问题的结论是 X", at: "2026-11-01T00:00:00+08:00" },
+      { id: "theirs", scope: join(home, "other"), text: "别的目录的结论", at: "2026-11-01T00:00:00+08:00" },
+    ]),
+  );
+  try {
+    const hub = fakeHub();
+    const script = `PROMPT_ARG="$1"; cat "$AGENT_AUTOLOOP_CONTEXT" > mem.txt; echo "$PROMPT_ARG" > mem-prompt.txt; echo 改好了`;
+    const given = job({ command: ["/bin/sh", "-c", script, "sh", "{prompt}"] });
+    hub.jobs.push(given);
+    const w = worker(hub);
+    await until(w, () => hub.results.length === 1);
+    const file = JSON.parse(readFileSync(join(folder, "mem.txt"), "utf8"));
+    assert.deepEqual(
+      file.memory.map((kept: { id: string }) => kept.id),
+      ["mine"],
+      "what earlier runs left in this folder, and nothing from another",
+    );
+    const prompt = readFileSync(join(folder, "mem-prompt.txt"), "utf8");
+    assert.match(prompt, /memory/, "the run is told the file holds memories");
+    assert.ok(!prompt.includes("上次类似问题的结论是 X"), "a memory's words stay in the file");
+    assert.ok(!prompt.includes("别的目录的结论"));
+  } finally {
+    rmSync(join(home, "memory.json"), { force: true });
+  }
 });
 
 test("a bad exit code, or no last message, is a failure saying why", async () => {

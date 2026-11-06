@@ -26,6 +26,7 @@ import type { Job } from "../protocol/job.ts";
 import { addUsage, type Notice, type Result } from "../protocol/validate.ts";
 import { adapterFor, type Adapter, type Reading, type Turn, type Usage } from "./agents.ts";
 import { promptFor, readMessage, repairPrompt, resultFrom } from "./contract.ts";
+import { recall } from "./memory.ts";
 import { loadUsage, saveUsage, usageDelta } from "./usage.ts";
 
 const RUNS = path.join(HOME, "worker", "runs");
@@ -285,9 +286,13 @@ export function createWorker({
     // Kept before anything slow: a worker stopped from here on still has the job.
     save(entry);
     try {
-      writeFileSync(path.join(dir, "context.json"), JSON.stringify(job.context, null, 2), { mode: 0o600 });
+      // What earlier runs in this folder left behind rides along as material, in the file and nowhere else.
+      const memory = recall(job.rule.cwd);
+      writeFileSync(path.join(dir, "context.json"), JSON.stringify({ ...job.context, memory }, null, 2), {
+        mode: 0o600,
+      });
       const adapter = await adapterFor(job.agent.use);
-      entry.prompt = promptFor(job, path.join(dir, "context.json"));
+      entry.prompt = promptFor(job, path.join(dir, "context.json"), memory);
       save(entry);
       launch(entry, adapter, entry.prompt);
     } catch (error) {
@@ -387,9 +392,10 @@ export function createWorker({
     }
     if (entry.turn === 0) {
       // The worker stopped while starting it, before anything was launched.
-      if (!entry.prompt) entry.prompt = promptFor(entry.job, path.join(entry.dir, "context.json"));
+      const memory = recall(entry.job.rule.cwd);
+      if (!entry.prompt) entry.prompt = promptFor(entry.job, path.join(entry.dir, "context.json"), memory);
       try {
-        writeFileSync(path.join(entry.dir, "context.json"), JSON.stringify(entry.job.context, null, 2), {
+        writeFileSync(path.join(entry.dir, "context.json"), JSON.stringify({ ...entry.job.context, memory }, null, 2), {
           mode: 0o600,
         });
         return launch(entry, adapter, entry.prompt);

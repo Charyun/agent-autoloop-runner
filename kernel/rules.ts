@@ -2,7 +2,8 @@
 // here, in protocol/rules.ts.
 export type Access = "read" | "edit" | "full";
 export type Source = { name: string; adapter?: string };
-type AgentOptions = { model?: string; effort?: string; command?: string[]; timeout?: number };
+/** `about` is the owner's own words on what this agent is for; the kernel only carries it, never reads it into a prompt. */
+type AgentOptions = { model?: string; effort?: string; command?: string[]; timeout?: number; about?: string };
 export type Agent = AgentOptions & { name: string; worker: string; use: string; access: Access };
 export type Channel = { name: string; answerers?: string[]; links?: boolean };
 export type Tell = "always" | "needed" | "never";

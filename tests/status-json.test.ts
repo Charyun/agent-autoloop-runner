@@ -39,7 +39,9 @@ test("status --json prints the same state the hub serves, and the plain output s
       hub.parseRules(
         JSON.stringify({
           sources: { local: { name: "本机" } },
-          agents: { helper: { name: "助手", worker: "this-machine", use: "command", command: ["true"] } },
+          agents: {
+            helper: { name: "助手", worker: "this-machine", use: "command", command: ["true"], about: "跑腿和整理" },
+          },
           channels: {},
           rules: [],
         }),
@@ -53,6 +55,11 @@ test("status --json prints the same state the hub serves, and the plain output s
   assert.equal(state.timezone, hub.stateOf().timezone);
   assert.ok(Array.isArray(state.runs));
   assert.ok(Array.isArray(state.cards));
+  assert.equal(
+    state.agents.find((agent: { id: string }) => agent.id === "helper").about,
+    "跑腿和整理",
+    "the owner's words on what an agent is for reach a remote client",
+  );
   const human = await cli("status");
   assert.ok(!human.trim().startsWith("{"));
   assert.match(human, /在跑|排队|等你/);

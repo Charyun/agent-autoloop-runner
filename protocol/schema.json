@@ -496,6 +496,9 @@
             "timeout": {
               "type": "integer",
               "minimum": 1
+            },
+            "about": {
+              "type": "string"
             }
           },
           "required": ["id", "name", "use", "access"],

@@ -61,6 +61,8 @@ description: 配置 Agent 自动化中台：加规则、接新的事件插件、
 
 `access` 默认 `edit`，专用插件翻译成对应 CLI 的权限；`command` 只传参数，不替任意程序限制权限，按该 CLI 文档配置。要完整权限、不审批的话写 `full`，先和用户说清楚。
 
+写一句 `about`（比如 `"about": "擅长长任务、跨文件重构"`）说明这个 Agent 是干啥的：它只是给你和按它挑 Agent 的客户端看的资料，不进提示词，也不影响派活。
+
 第三方仓库根目录放 `agent.ts`、`channel.ts` 或 `source.ts`，用 `agent-autoloop add <git 地址>` 安装到 `~/.agent-autoloop/plugins/<仓库名>`。仓库名转成小写就是插件名，规则的 `use` 写它；只能有小写字母、数字和 `-`，不合要求的 `add` 会拒绝。同名本机插件优先于内置插件，不自动更新。插件是可信代码，先读再装。
 
 一轮最长跑多久写 `timeout`，单位是分钟，默认 180。

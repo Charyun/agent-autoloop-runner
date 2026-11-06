@@ -52,6 +52,7 @@
       "model": "…",
       "effort": "high",
       "access": "edit",
+      "about": "擅长长任务、跨文件重构", // 可选：这个 Agent 是干啥的，给你自己和派活的客户端看，不进提示词
     },
     "cursor": {
       "name": "Cursor",
@@ -275,7 +276,7 @@ POST /v1/cards/56/resolve   { "reason": "不用决定了，因为……" }
 POST /v1/runs/12/cancel     {}
 ```
 
-`agent-autoloop status`、`answer`、`resolve`、`stop` 就是这几个请求。`/v1/state` 一次给最近 60 轮，`?before=<nextBefore>` 翻更早的。
+`agent-autoloop status`、`answer`、`resolve`、`stop` 就是这几个请求。`/v1/state` 一次给最近 60 轮，`?before=<nextBefore>` 翻更早的。`agents` 每项含 `id`、`name`、`use`、`worker`、在线与否和今日轮数；规则里给这个 Agent 写了 `about` 时带上它——那是你对“它是干啥的”的一句话，给按它挑 Agent 的客户端看，不进提示词。
 
 `/v1/state` 的 `spending.today`、`spending.week` 独立于分页，按规则时区的今天和过去 7 × 24 小时的完成时间汇总。每项含 `rounds`、`tokens`、`cost`、`missingTokens`、`missingCost`，后两项是没报对应用量的轮数；从未开始就取消的轮次不计入。
 

@@ -2,7 +2,14 @@
   "timezone": "Asia/Shanghai",
   "sources": { "app": { "name": "应用" }, "ops": { "name": "运维" }, "hooks": { "name": "外部", "adapter": "echo" } },
   "agents": {
-    "a1": { "name": "甲", "worker": "w1", "use": "claude", "model": "m1", "effort": "high" },
+    "a1": {
+      "name": "甲",
+      "worker": "w1",
+      "use": "claude",
+      "model": "m1",
+      "effort": "high",
+      "about": "擅长长任务、跨文件重构"
+    },
     "a2": { "name": "乙", "worker": "w2", "use": "codex", "access": "full" },
     "a3": { "name": "丙", "worker": "w1", "use": "command", "command": ["echo", "{prompt}"] }
   },

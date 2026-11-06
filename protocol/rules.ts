@@ -161,6 +161,7 @@ export function parseRules(json: string, now: number, timezone: string): Rules {
       ["use", isId, ID_WORDS],
       ["model", isText, NOT_EMPTY, true],
       ["effort", isText, NOT_EMPTY, true],
+      ["about", isText, NOT_EMPTY, true],
       ["access", (value) => ACCESS.includes(value as string), `只能是 ${ACCESS.join("、")}`, true],
       ["command", isSomeWords, "要是命令行的列表", !isObject(agent) || agent.use !== "command"],
       ["timeout", isCount, "要是正整数（分钟）", true],

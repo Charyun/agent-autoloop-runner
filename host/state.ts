@@ -130,9 +130,9 @@ export function stateOf(now: number, before: number | undefined, rules: Rules, {
       const next = iso(nextRun(parseCron(cron)!, now, rules.timezone) ?? now);
       return { id: name, name, source, agent: to, cron, every: describeCron(cron), next, where };
     }),
-    agents: Object.entries(rules.agents).map(([id, { name, use, worker }]) => {
+    agents: Object.entries(rules.agents).map(([id, { name, use, worker, about }]) => {
       const totals = tally(counts.filter((row) => row.agent === id));
-      return { id, name, use, worker, ...presence(`worker:${worker}`), totals };
+      return { id, name, use, worker, ...(about !== undefined && { about }), ...presence(`worker:${worker}`), totals };
     }),
     channels: Object.entries(rules.channels).map(([id, { name }]) => ({ id, name, ...presence(`channel:${id}`) })),
     runs: visible.map((run) => ({

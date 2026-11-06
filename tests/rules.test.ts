@@ -7,6 +7,8 @@
 // prompt, or without a folder; a misspelt field taken silently; a rule running more than one at a time without saying how many, or
 // rules in one group disagreeing on it; an emit naming a source that isn't there; a rule's channels naming one that isn't there, or none at all; a scheduled task shown on the page naming a source or agent that isn't there or a malformed schedule, or saying how its answers go on without where (cwd), or where without how; a time zone
 // that doesn't exist; the reserved source redefined; a null rule crashes reload instead of keeping the old rules.
+// An agent's `about` saying what it is for must be accepted and kept, and a non-empty text it must be: rejected as an
+// unknown field, or taken when it isn't words, both leave the owner with no way to describe an agent.
 // A good file changing on disk takes effect; a bad one doesn't, and says why. A file that is gone or can't be read
 // crashes the hub, at reload or at restart, instead of keeping the rules it had. A file broken while the hub was down
 // is never told, because nothing about it changes after startup has read it.
@@ -43,6 +45,18 @@ test("the fixture loads, with defaults filled in", () => {
   assert.equal(r.sources.schedule.name, "定时");
   assert.equal(r.agents.a1.access, "edit", "the safe level unless the rule's author asks otherwise");
   assert.equal(r.agents.a2.access, "full");
+});
+
+test("an agent's about says what it is for, and only words are kept there", () => {
+  const r = parseRules(JSON.stringify(good()));
+  assert.equal(r.agents.a1.about, "擅长长任务、跨文件重构");
+  assert.equal(r.agents.a2.about, undefined, "about is optional, an agent without one is fine");
+  problem((given) => {
+    given.agents.a1.about = 42;
+  }, /Agent a1 的 about 不能为空/);
+  problem((given) => {
+    given.agents.a1.about = "   ";
+  }, /Agent a1 的 about 不能为空/);
 });
 
 test("a mistake says which rule and what is wrong", () => {
